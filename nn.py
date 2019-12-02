@@ -117,7 +117,7 @@ def CreateSet(csv):
     data['Longitude'] = data['Latitude']
     data['Latitude'] = data['Latitude'].apply(locations.TransformToLatitude)
     data['Longitude'] = data['Longitude'].apply(locations.TransformToLongitude)
-    #data = data.astype('float64')
+    #
     data = data.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
     latitude = 6.921812
     longitude = 79.865561
@@ -131,14 +131,19 @@ def CreateSet(csv):
         maskY = (data['Local time'] > str(curr_date+datetime.timedelta(days=6))) & (data['Local time'] < str(curr_date+datetime.timedelta(days=7))) & (abs(data['Latitude']-latitude) < eps) & (abs(data['Longitude']-longitude) < eps)
         onerow = data.loc[mask].copy()
         onerowY = data.loc[maskY].copy()
-        #todo interpolation of data
-        onerow = onerow.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
-        onerowY = onerowY.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
-        if(onerow.shape[0] != 40 or onerowY.shape[0] != 8): # todo: interpolation of data
-            continue
         onerowY = onerowY[['Temperature', 'Wind m/s']]
 
         onerow['Local time'] = data['Local time'].apply(TransformDateFull)
+        onerow = onerow.astype('float64')
+        onerowY = onerowY.astype('float64')
+
+        #todo interpolation of data
+        onerow = onerow.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
+        onerowY = onerowY.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
+
+        if(onerow.shape[0] != 40 or onerowY.shape[0] != 8): # todo: interpolation of data
+            continue
+        
         onerow = onerow.reset_index(drop=True)
         onerow.index = onerow.index + 1
         onerow_out = onerow.stack()
@@ -166,7 +171,8 @@ scaler = StandardScaler()
 scaler.fit(X_train)
 X_train = scaler.transform(X_train)
 X_train = pd.DataFrame(X_train, columns=n2)
-X_train.to_csv('test.csv')
+X_train.to_csv('trainX.csv')
+Y_train.to_csv('trainY.csv')
 clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(30, 10), random_state=1)
 #clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(1, 1), random_state=1, verbose=1)
 clf.fit(X_train,Y_train)
