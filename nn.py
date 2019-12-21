@@ -216,10 +216,10 @@ architectures = [(5, 10), (10, 10), (15, 10), (20, 10), (25, 10), (30, 10), (30,
 
 timestr = time.strftime("%Y%m%d-%H%M%S")
 text_file = open(timestr + '.csv', "w")
-train1 = "C:/Users/Mateusz/source/repos/SN_Project3/data/train_1"
-test1 = "C:/Users/Mateusz/source/repos/SN_Project3/data/test_1"
-train2 = "C:/Users/Mateusz/source/repos/SN_Project3/data/train_2"
-test2 = "C:/Users/Mateusz/source/repos/SN_Project3/data/test_2"
+train1 = "data/train_1"
+test1 = "data/test_1"
+train2 = "data/train_2"
+test2 = "data/test_2"
 text_file.write('name,train,test,architecture,inteprolate,applyWindTransformation,temperatureAvgError,temperatureAvgStd,windGoodPredictions\n')
 for architecture in architectures:
     CreateTestinScenario("Default test", train1, test1, architecture, 0, 0)
