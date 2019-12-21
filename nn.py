@@ -5,6 +5,12 @@ import datetime
 from geopy.geocoders import Nominatim
 import numpy as np
 import os
+import math
+import time 
+names = ['Local time', 'Temperature', 'Pressure (station)', 'Pressure (sea level)', 'Humidity', 'Wind direction',
+    'Wind m/s', 'Cloudiness', 'Horizontal Visibility',  'Dewpoint temperature', 'Latitude']
+eps = 0.01
+
 def ParseCloudiness(x):
     if(x == "no clouds" or x == "" or x == "" or pd.isna(x)):
         return 0
@@ -48,6 +54,9 @@ def ParseWindDirection(x):
     if(edge < 0):
         edge += 360
     return edge
+
+def ParseWinSin(x):
+    return math.sin(x)
 
     
 def GetDirectionEdge(x, edge):
@@ -106,7 +115,7 @@ def WindToBool(x):
 def MakeDateZero(x):
     return x.replace(hour=0, minute=0, second=0, microsecond=0)
 
-def CreateSet(csv):
+def CreateSet(csv, interpolate=0, applyWindTransformation=0):
     data = pd.read_csv(csv, names=names, sep=";", skiprows=[0], encoding='utf-8')
     X = pd.DataFrame()
     Y = pd.DataFrame()
@@ -115,15 +124,22 @@ def CreateSet(csv):
 
     data['Cloudiness'] = data['Cloudiness'].apply(ParseCloudiness)
     data['Wind direction'] = data['Wind direction'].apply(ParseWindDirection)
+    if(applyWindTransformation == 1):
+        data['Wind direction'] = data['Wind direction'].apply(ParseWinSin)
     data['Local time'] = data['Local time'].apply(TransformDate)
     data['Horizontal Visibility'] = data['Horizontal Visibility'].apply(ParseVisibility)
     data['Longitude'] = data['Latitude']
     data['Latitude'] = data['Latitude'].apply(locations.TransformToLatitude)
     data['Longitude'] = data['Longitude'].apply(locations.TransformToLongitude)
     #
-    data = data.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
+    data = data.sort_values(by=['Latitude', 'Longitude', 'Local time'])
+    data = data.reset_index(drop=True)
 
-    eps = 0.01
+    if(interpolate == 0):
+        data = data.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
+    else:
+        data.interpolate(method='nearest', axis=0).ffill().bfill()
+    data = data.reset_index(drop=True)
 
     dates = pd.DataFrame(data['Local time'].apply(MakeDateZero).unique(), columns=['Local time']).sort_values(by='Local time').reset_index(drop=True)
     for city in locations.GetAllCities():
@@ -141,13 +157,6 @@ def CreateSet(csv):
             onerow = onerow.astype('float64')
             onerowY = onerowY.astype('float64')
 
-            #todo interpolation of data or maybe just take average for each day?
-            #onerow = onerow.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
-            #onerowY = onerowY.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
-
-            if(onerow.shape[0] != 40 or onerowY.shape[0] != 8): # todo: interpolation of data
-                continue
-            
             onerow = onerow.reset_index(drop=True)
             onerow.index = onerow.index + 1
             onerow_out = onerow.stack()
@@ -164,45 +173,66 @@ def CreateSet(csv):
             Y = Y.append(onerowY, ignore_index = True)
     return [X, Y]
 
+def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWindTransformation=0):
+    [X_train, Y_train] = CreateSet(train)
+    n2 = X_train.columns.values
+    n2_Y = Y_train.columns.values
+    scaler = StandardScaler()
+    scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_train = pd.DataFrame(X_train, columns=n2)
 
-names = ['Local time', 'Temperature', 'Pressure (station)', 'Pressure (sea level)', 'Humidity', 'Wind direction',
- 'Wind m/s', 'Cloudiness', 'Horizontal Visibility',  'Dewpoint temperature', 'Latitude']
+    clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=architecture, random_state=1)
+    #clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(1, 1), random_state=1)
+    clf.fit(X_train,Y_train)
 
-[X_train, Y_train] = CreateSet('C:/Users/Mateusz/source/repos/SN_Project3/data/train_1')
-n2 = X_train.columns.values
-n2_Y = Y_train.columns.values
-scaler = StandardScaler()
-scaler.fit(X_train)
-X_train = scaler.transform(X_train)
-X_train = pd.DataFrame(X_train, columns=n2)
-X_train.to_csv('trainX.csv')
-Y_train.to_csv('trainY.csv')
-clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(30, 10), random_state=1)
-#clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(1, 1), random_state=1)
-clf.fit(X_train,Y_train)
+    [X_test, Y_test] = CreateSet(test)
 
-[X_test, Y_test] = CreateSet('C:/Users/Mateusz/source/repos/SN_Project3/data/test_1')
+    X_test = scaler.transform(X_test)
+    X_test = pd.DataFrame(X_test, columns=n2)
 
-X_test = scaler.transform(X_test)
-X_test = pd.DataFrame(X_test, columns=n2)
+    predictions = clf.predict(X_test)
 
-predictions = clf.predict(X_test)
+    predictions = pd.DataFrame(predictions, columns=n2_Y)
+    #print(predictions)
+    #print(Y_test)
+    predictions.loc[:, predictions.columns.str.startswith('Wind m/s')] = predictions.loc[:, predictions.columns.str.startswith('Wind m/s')].applymap(WindToBool)
+    Y_test.loc[:, Y_test.columns.str.startswith('Wind m/s')] = Y_test.loc[:, Y_test.columns.str.startswith('Wind m/s')].applymap(WindToBool)
 
-predictions = pd.DataFrame(predictions, columns=n2_Y)
-#print(predictions)
-#print(Y_test)
-predictions.loc[:, predictions.columns.str.startswith('Wind m/s')] = predictions.loc[:, predictions.columns.str.startswith('Wind m/s')].applymap(WindToBool)
-Y_test.loc[:, Y_test.columns.str.startswith('Wind m/s')] = Y_test.loc[:, Y_test.columns.str.startswith('Wind m/s')].applymap(WindToBool)
+    wind_predictions = predictions.loc[:, predictions.columns.str.startswith('Wind m/s')].any(axis='columns')
+    wind_Y =  Y_test.loc[:, Y_test.columns.str.startswith('Wind m/s')].any(axis='columns')
 
-wind_predictions = predictions.loc[:, predictions.columns.str.startswith('Wind m/s')].any(axis='columns')
-wind_Y =  Y_test.loc[:, Y_test.columns.str.startswith('Wind m/s')].any(axis='columns')
+    good_predictions = wind_predictions == wind_Y
+    good_predictions = good_predictions[good_predictions == True].sum()
 
-wind_predictions.to_csv('wind_predictions.log')
-wind_Y.to_csv('wind_Y.log')
-good_predictions = wind_predictions == wind_Y
-good_predictions = good_predictions[good_predictions == True].sum()
+    errorsTemperature = abs(predictions.loc[:, predictions.columns.str.startswith('Temperature')]-Y_test.loc[:, Y_test.columns.str.startswith('Temperature')])
+    text_file.write(name + ',' + train + ',' + test + ',' + str(architecture) + ',' + str(interpolate) + ',' + str(applyWindTransformation) + 
+    ',' + str(np.average(errorsTemperature)) + ',' + str(np.std(errorsTemperature).mean()) + ',' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + '\n')
+    #print(name, ',', train, ',', test, ',', architecture, ',', interpolate, ',', applyWindTransformation, ',', )
+    #print('Temperature\nAverage error: ' + str(np.average(errorsTemperature)) + 'Average std: ' + str(np.std(errorsTemperature).mean()))
+    #print('Wind\nGood predictions: ' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + "%")
 
-errorsTemperature = abs(predictions.loc[:, predictions.columns.str.startswith('Temperature')]-Y_test.loc[:, Y_test.columns.str.startswith('Temperature')])
-errorsTemperature.to_csv('errorsTemp.log')
-print('Temperature\nAverage error: ' + str(np.average(errorsTemperature)) + 'Average std: ' + str(np.std(errorsTemperature).mean()))
-print('Wind\nGood predictions: ' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + "%")
+architectures = [(5, 10), (10, 10), (15, 10), (20, 10), (25, 10), (30, 10), (30, 5), (30, 10), (30, 15), (30, 20), (30, 25)]
+
+timestr = time.strftime("%Y%m%d-%H%M%S")
+text_file = open(timestr + '.csv', "w")
+train1 = "C:/Users/Mateusz/source/repos/SN_Project3/data/train_1"
+test1 = "C:/Users/Mateusz/source/repos/SN_Project3/data/test_1"
+train2 = "C:/Users/Mateusz/source/repos/SN_Project3/data/train_2"
+test2 = "C:/Users/Mateusz/source/repos/SN_Project3/data/test_2"
+text_file.write('name,train,test,architecture,inteprolate,applyWindTransformation,temperatureAvgError,temperatureAvgStd,windGoodPredictions\n')
+for architecture in architectures:
+    CreateTestinScenario("Default test", train1, test1, architecture, 0, 0)
+    CreateTestinScenario("Default test", train2, test2, architecture, 0, 0)
+
+    CreateTestinScenario("Default test", train1, test1, architecture, 1, 0)
+    CreateTestinScenario("Default test", train2, test2, architecture, 1, 0)
+
+    CreateTestinScenario("Default test", train1, test1, architecture, 0, 1)
+    CreateTestinScenario("Default test", train2, test2, architecture, 0, 1)
+
+    CreateTestinScenario("Default test", train1, test1, architecture, 1, 1)
+    CreateTestinScenario("Default test", train2, test2, architecture, 1, 1)
+
+text_file.close()
+
