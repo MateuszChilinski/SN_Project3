@@ -10,6 +10,7 @@ import time
 names = ['Local time', 'Temperature', 'Pressure (station)', 'Pressure (sea level)', 'Humidity', 'Wind direction',
     'Wind m/s', 'Cloudiness', 'Horizontal Visibility',  'Dewpoint temperature', 'Latitude']
 eps = 0.01
+timestr = time.strftime("%Y%m%d-%H%M%S")
 
 def ParseCloudiness(x):
     if(x == "no clouds" or x == "" or x == "" or pd.isna(x)):
@@ -206,7 +207,8 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
     good_predictions = good_predictions[good_predictions == True].sum()
 
     errorsTemperature = abs(predictions.loc[:, predictions.columns.str.startswith('Temperature')]-Y_test.loc[:, Y_test.columns.str.startswith('Temperature')])
-    text_file.write(name + ',' + train + ',' + test + ',' + str(architecture) + ',' + str(interpolate) + ',' + str(applyWindTransformation) + 
+    with open(timestr + '.csv', "a+") as myfile:
+        myfile.write(name + ',' + train + ',' + test + ',' + str(architecture) + ',' + str(interpolate) + ',' + str(applyWindTransformation) + 
     ',' + str(np.average(errorsTemperature)) + ',' + str(np.std(errorsTemperature).mean()) + ',' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + '\n')
     #print(name, ',', train, ',', test, ',', architecture, ',', interpolate, ',', applyWindTransformation, ',', )
     #print('Temperature\nAverage error: ' + str(np.average(errorsTemperature)) + 'Average std: ' + str(np.std(errorsTemperature).mean()))
@@ -214,13 +216,12 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
 
 architectures = [(5, 10), (10, 10), (15, 10), (20, 10), (25, 10), (30, 10), (30, 5), (30, 10), (30, 15), (30, 20), (30, 25)]
 
-timestr = time.strftime("%Y%m%d-%H%M%S")
-text_file = open(timestr + '.csv', "w")
 train1 = "data/train_1"
 test1 = "data/test_1"
 train2 = "data/train_2"
 test2 = "data/test_2"
-text_file.write('name,train,test,architecture,inteprolate,applyWindTransformation,temperatureAvgError,temperatureAvgStd,windGoodPredictions\n')
+with open(timestr + '.csv', "a+") as myfile:
+    myfile.write('name,train,test,architecture,inteprolate,applyWindTransformation,temperatureAvgError,temperatureAvgStd,windGoodPredictions\n')
 for architecture in architectures:
     CreateTestinScenario("Default test", train1, test1, architecture, 0, 0)
     CreateTestinScenario("Default test", train2, test2, architecture, 0, 0)
