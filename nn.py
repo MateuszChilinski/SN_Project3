@@ -129,21 +129,28 @@ def CreateSet(csv, interpolate=0, applyWindTransformation=0):
         data['Wind direction'] = data['Wind direction'].apply(ParseWinSin)
     data['Local time'] = data['Local time'].apply(TransformDate)
     data['Horizontal Visibility'] = data['Horizontal Visibility'].apply(ParseVisibility)
+    print("Sorting...", flush=True)
+    data = data.sort_values(by=['Latitude', 'Local time'])
+
     data['Longitude'] = data['Latitude']
     data['Latitude'] = data['Latitude'].apply(locations.TransformToLatitude)
     data['Longitude'] = data['Longitude'].apply(locations.TransformToLongitude)
     #
-    data = data.sort_values(by=['Latitude', 'Longitude', 'Local time'])
     data = data.reset_index(drop=True)
-
     if(interpolate == 0):
+        print("Droping NA...", flush=True)
         data = data.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
     else:
+        print("Interpolating...", flush=True)
         data.interpolate(method='nearest', axis=0).ffill().bfill()
     data = data.reset_index(drop=True)
 
     dates = pd.DataFrame(data['Local time'].apply(MakeDateZero).unique(), columns=['Local time']).sort_values(by='Local time').reset_index(drop=True)
+    cities = locations.GetAllCities()
+    i = 0
     for city in locations.GetAllCities():
+        print("Cities done: " + str(i) + "/" + str(len(cities)))
+        i = i+1
         latitude = locations.TransformToLatitude(city)
         longitude = locations.TransformToLongitude(city)
         for index, row in dates.iterrows():
@@ -152,6 +159,8 @@ def CreateSet(csv, interpolate=0, applyWindTransformation=0):
             maskY = (data['Local time'] > str(curr_date+datetime.timedelta(days=6))) & (data['Local time'] < str(curr_date+datetime.timedelta(days=7))) & (abs(data['Latitude']-latitude) < eps) & (abs(data['Longitude']-longitude) < eps)
             onerow = data.loc[mask].copy()
             onerowY = data.loc[maskY].copy()
+            if(onerow.shape[0] != 40 or onerowY.shape[0] != 8): # there is not enough data
+                continue
             onerowY = onerowY[['Temperature', 'Wind m/s']]
 
             onerow['Local time'] = data['Local time'].apply(TransformDateFull)
@@ -170,8 +179,9 @@ def CreateSet(csv, interpolate=0, applyWindTransformation=0):
             onerowY_out.index = onerowY_out.index.map('{0[1]}_{0[0]}'.format)
             onerowY = onerowY_out.to_frame().T
 
-            X = X.append(onerow, ignore_index = True)
-            Y = Y.append(onerowY, ignore_index = True)
+            X = X.append(onerow, ignore_index = True, sort=False)
+            Y = Y.append(onerowY, ignore_index = True, sort=False)
+    print("Data prepared...", flush=True)
     return [X, Y]
 
 def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWindTransformation=0):
@@ -185,13 +195,14 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
 
     clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=architecture, random_state=1)
     #clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(1, 1), random_state=1)
+    print("Fitting...", flush=True)
     clf.fit(X_train,Y_train)
 
     [X_test, Y_test] = CreateSet(test)
 
     X_test = scaler.transform(X_test)
     X_test = pd.DataFrame(X_test, columns=n2)
-
+    print("Predicting...", flush=True)
     predictions = clf.predict(X_test)
 
     predictions = pd.DataFrame(predictions, columns=n2_Y)
@@ -207,8 +218,9 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
     good_predictions = good_predictions[good_predictions == True].sum()
 
     errorsTemperature = abs(predictions.loc[:, predictions.columns.str.startswith('Temperature')]-Y_test.loc[:, Y_test.columns.str.startswith('Temperature')])
+    print("Saving...", flush=True)
     with open(timestr + '.csv', "a+") as myfile:
-        myfile.write(name + ',' + train + ',' + test + ',' + str(architecture) + ',' + str(interpolate) + ',' + str(applyWindTransformation) + 
+        myfile.write(name + ',' + train + ',' + test + ',' + str(architecture).replace(',', '-') + ',' + str(interpolate) + ',' + str(applyWindTransformation) + 
     ',' + str(np.average(errorsTemperature)) + ',' + str(np.std(errorsTemperature).mean()) + ',' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + '\n')
     #print(name, ',', train, ',', test, ',', architecture, ',', interpolate, ',', applyWindTransformation, ',', )
     #print('Temperature\nAverage error: ' + str(np.average(errorsTemperature)) + 'Average std: ' + str(np.std(errorsTemperature).mean()))
