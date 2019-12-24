@@ -185,7 +185,7 @@ def CreateSet(csv, interpolate=0, applyWindTransformation=0):
     return [X, Y]
 
 def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWindTransformation=0):
-    [X_train, Y_train] = CreateSet(train)
+    [X_train, Y_train] = CreateSet(train, interpolate, applyWindTransformation)
     n2 = X_train.columns.values
     n2_Y = Y_train.columns.values
     scaler = StandardScaler()
@@ -198,7 +198,7 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
     print("Fitting...", flush=True)
     clf.fit(X_train,Y_train)
 
-    [X_test, Y_test] = CreateSet(test)
+    [X_test, Y_test] = CreateSet(test, interpolate, applyWindTransformation)
 
     X_test = scaler.transform(X_test)
     X_test = pd.DataFrame(X_test, columns=n2)
