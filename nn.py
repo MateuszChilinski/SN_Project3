@@ -193,7 +193,7 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
     X_train = scaler.transform(X_train)
     X_train = pd.DataFrame(X_train, columns=n2)
 
-    clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=architecture, random_state=1)
+    clf = MLPRegressor(solver='sgd', alpha=1e-5, hidden_layer_sizes=architecture, random_state=1)
     #clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(1, 1), random_state=1)
     print("Fitting...", flush=True)
     clf.fit(X_train,Y_train)
