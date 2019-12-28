@@ -141,8 +141,8 @@ def CreateSet(csv, interpolate=0, applyWindTransformation=0):
         print("Droping NA...", flush=True)
         data = data.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
     else:
-        print("Interpolating...", flush=True)
-        data.interpolate(method='nearest', axis=0).ffill().bfill()
+        print("Interpolating...", flush=True) # interpolate data
+        data = data.interpolate(method='nearest', axis=0).ffill().bfill()
     data = data.reset_index(drop=True)
 
     dates = pd.DataFrame(data['Local time'].apply(MakeDateZero).unique(), columns=['Local time']).sort_values(by='Local time').reset_index(drop=True)
@@ -193,7 +193,7 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
     X_train = scaler.transform(X_train)
     X_train = pd.DataFrame(X_train, columns=n2)
 
-    clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=architecture, random_state=1)
+    clf = MLPRegressor(solver='adam', alpha=1e-5, hidden_layer_sizes=architecture, random_state=1)
     #clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(1, 1), random_state=1)
     print("Fitting...", flush=True)
     clf.fit(X_train,Y_train)
