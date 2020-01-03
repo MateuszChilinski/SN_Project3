@@ -217,11 +217,12 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
     good_predictions = wind_predictions == wind_Y
     good_predictions = good_predictions[good_predictions == True].sum()
 
-    errorsTemperature = predictions.loc[:, predictions.columns.str.startswith('Temperature')]-Y_test.loc[:, Y_test.columns.str.startswith('Temperature')]
+    errorsTemperature = abs(predictions.loc[:, predictions.columns.str.startswith('Temperature')]-Y_test.loc[:, Y_test.columns.str.startswith('Temperature')])
+    np.savetxt('data'+ architecture + '-' + test + '-' + interpolate + applyWindTransformation +'.csv', errorsTemperature, delimiter=',')
     print("Saving...", flush=True)
     with open(timestr + '.csv', "a+") as myfile:
         myfile.write(name + ',' + train + ',' + test + ',' + str(architecture).replace(',', '-') + ',' + str(interpolate) + ',' + str(applyWindTransformation) + 
-    ',' + str(np.average(abs(errorsTemperature))) + ',' + str(np.std(errorsTemperature)) + ',' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + '\n')
+    ',' + str(np.average(errorsTemperature)) + ',' + str(np.std(errorsTemperature)) + ',' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + '\n')
     #print(name, ',', train, ',', test, ',', architecture, ',', interpolate, ',', applyWindTransformation, ',', )
     #print('Temperature\nAverage error: ' + str(np.average(errorsTemperature)) + 'Average std: ' + str(np.std(errorsTemperature).mean()))
     #print('Wind\nGood predictions: ' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + "%")
