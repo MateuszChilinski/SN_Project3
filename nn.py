@@ -218,7 +218,7 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
     good_predictions = good_predictions[good_predictions == True].sum()
 
     errorsTemperature = abs(predictions.loc[:, predictions.columns.str.startswith('Temperature')]-Y_test.loc[:, Y_test.columns.str.startswith('Temperature')])
-    np.savetxt('data'+ architecture + '-' + test + '-' + interpolate + applyWindTransformation +'.csv', errorsTemperature, delimiter=',')
+    np.savetxt('data'+ str(architecture).replace(',', '-') + '-' + test + '-' + interpolate + applyWindTransformation +'.csv', errorsTemperature, delimiter=',')
     print("Saving...", flush=True)
     with open(timestr + '.csv', "a+") as myfile:
         myfile.write(name + ',' + train + ',' + test + ',' + str(architecture).replace(',', '-') + ',' + str(interpolate) + ',' + str(applyWindTransformation) + 
