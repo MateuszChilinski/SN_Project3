@@ -2,7 +2,7 @@ library(plyr)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-
+library(scales)
 data <- read.csv('C:/Users/Mateusz/source/repos/SN_Project3/results.csv')
 
 
@@ -38,7 +38,7 @@ p1 <- ggplot(aes(y = temperatureAvgError, group=train, color=train, x = reorder(
   scale_linetype_manual(values=c("twodash", "dotted"))+
   facet_grid(applyWindTransformation~inteprolate, labeller=labeller(applyWindTransformation = dose.labs, inteprolate = supp.labs))
 
-p1 + labs(color = "Sets", title = "Results of Neural Network", x = "Architecture", y = "Average error", caption = "Mateusz Chilinski, Bartlomiej Chechlinski, 2020")
+p1 + labs(color = "Sets", title = "Results of Neural Network", x = "Architecture", y = "Average temp. error [°C]", caption = "Mateusz Chilinski, Bartlomiej Chechlinski, 2020")
 
 ggsave("1.png", width = 10, height = 6, dpi = 300)
 
@@ -51,6 +51,24 @@ p2 <- ggplot(aes(y = temperatureAvgError, group=train, color=train, x = reorder(
   scale_linetype_manual(values=c("twodash", "dotted"))+
   facet_grid(applyWindTransformation~inteprolate, labeller=labeller(applyWindTransformation = dose.labs, inteprolate = supp.labs))
 
-p2 + labs(color = "Sets", title = "Results of Neural Network", x = "Architecture", y = "Average error", caption = "Mateusz Chilinski, Bartlomiej Chechlinski, 2020")
+p2 + labs(color = "Sets", title = "Results of Neural Network", x = "Architecture", y = "Average temp. error [°C]", caption = "Mateusz Chilinski, Bartlomiej Chechlinski, 2020")
 
 ggsave("2.png", width = 10, height = 6, dpi = 300)
+
+p3 <- ggplot(aes(y = windGoodPredictions, group=train, color=train, fill=train, x = reorder(paste('(', first_layer,',',second_layer,')'), second_layer)), data = data_first_fixed) + 
+  geom_col(position=position_dodge(width=1)) +
+  scale_y_continuous(limits=c(85,100),oob = rescale_none) +
+  facet_grid(applyWindTransformation~inteprolate, labeller=labeller(applyWindTransformation = dose.labs, inteprolate = supp.labs))
+
+p3 + labs(fill="Sets", color = "Sets", title = "Results of Neural Network", x = "Architecture", y = "Wind correctly predicted [%]", caption = "Mateusz Chilinski, Bartlomiej Chechlinski, 2020")
+
+ggsave("3.png", width = 10, height = 6, dpi = 300)
+
+p4 <- ggplot(aes(y = windGoodPredictions, group=train, color=train, fill=train, x = reorder(paste('(', first_layer,',',second_layer,')'), first_layer)), data = data_second_fixed) + 
+  geom_col(position=position_dodge(width=1)) +
+  scale_y_continuous(limits=c(85,100),oob = rescale_none) +
+  facet_grid(applyWindTransformation~inteprolate, labeller=labeller(applyWindTransformation = dose.labs, inteprolate = supp.labs))
+
+p4 + labs(fill="Sets", color = "Sets", title = "Results of Neural Network", x = "Architecture", y = "Wind correctly predicted [%]", caption = "Mateusz Chilinski, Bartlomiej Chechlinski, 2020")
+
+ggsave("4.png", width = 10, height = 6, dpi = 300)
