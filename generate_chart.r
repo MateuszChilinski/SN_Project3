@@ -32,14 +32,25 @@ names(supp.labs) <- c("0", "1")
 
 
 p1 <- ggplot(aes(y = temperatureAvgError, group=train, color=train, x = reorder(paste('(', first_layer,',',second_layer,')'), second_layer)), data = data_first_fixed) + 
-  geom_errorbar(aes(ymin=max(0, temperatureAvgError-temperatureAvgStd), ymax=temperatureAvgError+temperatureAvgStd), width=.1) +
-  geom_line(linetype="dashed") +
-  geom_point()+
+  geom_errorbar(aes(ymin=max(0, temperatureAvgError-temperatureAvgStd), ymax=temperatureAvgError+temperatureAvgStd), width=.1, position=position_dodge(width=0.2)) +
+  geom_line(linetype="dashed", position=position_dodge(width=0.2)) +
+  geom_point(position=position_dodge(width=0.2))+
   scale_linetype_manual(values=c("twodash", "dotted"))+
-  theme(text=element_text(family="Tahoma")) +
   facet_grid(applyWindTransformation~inteprolate, labeller=labeller(applyWindTransformation = dose.labs, inteprolate = supp.labs))
 
-p1 + labs(title = "Results of Neural Network", x = "Architecture", y = "Average error", caption = "2019")
+p1 + labs(color = "Sets", title = "Results of Neural Network", x = "Architecture", y = "Average error", caption = "Mateusz Chilinski, Bartlomiej Chechlinski, 2020")
 
-ggsave("XD.png")
+ggsave("1.png", width = 10, height = 6, dpi = 300)
 
+# 2nd
+
+p2 <- ggplot(aes(y = temperatureAvgError, group=train, color=train, x = reorder(paste('(', first_layer,',',second_layer,')'), first_layer)), data = data_second_fixed) + 
+  geom_errorbar(aes(ymin=max(0, temperatureAvgError-temperatureAvgStd), ymax=temperatureAvgError+temperatureAvgStd), width=.1, position=position_dodge(width=0.2)) +
+  geom_line(linetype="dashed", position=position_dodge(width=0.2)) +
+  geom_point(position=position_dodge(width=0.2))+
+  scale_linetype_manual(values=c("twodash", "dotted"))+
+  facet_grid(applyWindTransformation~inteprolate, labeller=labeller(applyWindTransformation = dose.labs, inteprolate = supp.labs))
+
+p2 + labs(color = "Sets", title = "Results of Neural Network", x = "Architecture", y = "Average error", caption = "Mateusz Chilinski, Bartlomiej Chechlinski, 2020")
+
+ggsave("2.png", width = 10, height = 6, dpi = 300)
