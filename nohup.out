@@ -1,0 +1,43 @@
+Sorting...
+Interpolating...
+Cities done: 0/14
+Cities done: 1/14
+Cities done: 2/14
+Cities done: 3/14
+Cities done: 4/14
+Cities done: 5/14
+Cities done: 6/14
+Cities done: 7/14
+Cities done: 8/14
+Cities done: 9/14
+Cities done: 10/14
+Cities done: 11/14
+Cities done: 12/14
+Cities done: 13/14
+Data prepared...
+Fitting...
+/home/mateuszchilinski/anaconda3/lib/python3.7/site-packages/sklearn/neural_network/multilayer_perceptron.py:566: ConvergenceWarning: Stochastic Optimizer: Maximum iterations (200) reached and the optimization hasn't converged yet.
+  % self.max_iter, ConvergenceWarning)
+Sorting...
+Interpolating...
+Cities done: 0/14
+Cities done: 1/14
+Cities done: 2/14
+Cities done: 3/14
+Cities done: 4/14
+Cities done: 5/14
+Cities done: 6/14
+Cities done: 7/14
+Cities done: 8/14
+Cities done: 9/14
+Cities done: 10/14
+Cities done: 11/14
+Cities done: 12/14
+Cities done: 13/14
+Data prepared...
+Predicting...
+Saving...
+Sorting...
+Interpolating...
+Cities done: 0/14
+Cities done: 1/14

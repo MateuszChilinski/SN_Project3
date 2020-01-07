@@ -256,7 +256,7 @@ if testing_scenario == 0:
         CreateTestinScenario("Default test", train2, test2, architecture, 1, 1)
 elif testing_scenario == 1:
     architecture = (5, 10)
-    CreateTestinScenario("Wind test", train1, test1, architecture, 1, 0)
+    CreateTestinScenario("Wind test", train1, test1, (30, 15), 1, 1)
     testing_scenario = 2
     for city in cities:
         CreateTestinScenario("City test", train1, city, architecture, 1, 0)
