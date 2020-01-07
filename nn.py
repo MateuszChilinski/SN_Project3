@@ -7,6 +7,7 @@ import numpy as np
 import os
 import math
 import time 
+testing_scenario = 1
 names = ['Local time', 'Temperature', 'Pressure (station)', 'Pressure (sea level)', 'Humidity', 'Wind direction',
     'Wind m/s', 'Cloudiness', 'Horizontal Visibility',  'Dewpoint temperature', 'Latitude']
 eps = 0.01
@@ -218,7 +219,8 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
     good_predictions = good_predictions[good_predictions == True].sum()
 
     errorsTemperature = abs(predictions.loc[:, predictions.columns.str.startswith('Temperature')]-Y_test.loc[:, Y_test.columns.str.startswith('Temperature')])
-    #np.savetxt(os.path.dirname(os.path.realpath(__file__)) + "/" + "".join(('data'+ str(architecture).replace(',', '-') + '-' + test.replace("/", "") + '-' + str(interpolate) + str(applyWindTransformation) +'.csv').split()), errorsTemperature, delimiter=',')
+    if testing_scenario == 1: # print wind predictions
+        np.savetxt(os.path.dirname(os.path.realpath(__file__)) + "/" + "".join(('data'+ str(architecture).replace(',', '-') + '-' + test.replace("/", "") + '-' + str(interpolate) + str(applyWindTransformation) +'.csv').split()), wind_predictions, delimiter=',')
     print("Saving...", flush=True)
     with open(timestr + '.csv', "a+") as myfile:
         myfile.write(name + ',' + train + ',' + test + ',' + str(architecture).replace(',', '-') + ',' + str(interpolate) + ',' + str(applyWindTransformation) + 
@@ -229,21 +231,32 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
 
 architectures = [(5, 10), (10, 10), (15, 10), (20, 10), (25, 10), (30, 10), (30, 5), (30, 10), (30, 15), (30, 20), (30, 25)]
 
+
 train1 = "data/train_1"
 test1 = "data/test_1"
 train2 = "data/train_2"
 test2 = "data/test_2"
-with open(timestr + '.csv', "a+") as myfile:
-    myfile.write('name,train,test,architecture,inteprolate,applyWindTransformation,temperatureAvgError,temperatureAvgStd,windGoodPredictions\n')
-for architecture in architectures:
-    CreateTestinScenario("Default test", train1, test1, architecture, 0, 0)
-    CreateTestinScenario("Default test", train2, test2, architecture, 0, 0)
 
-    CreateTestinScenario("Default test", train1, test1, architecture, 1, 0)
-    CreateTestinScenario("Default test", train2, test2, architecture, 1, 0)
+cities = ['Bueons Aires', 'Colombo', 'Lima', 'Male', 'Miami', 'Port Moresby', 'Port-of-Spain']
 
-    CreateTestinScenario("Default test", train1, test1, architecture, 0, 1)
-    CreateTestinScenario("Default test", train2, test2, architecture, 0, 1)
+if testing_scenario == 0:
+    with open(timestr + '.csv', "a+") as myfile:
+        myfile.write('name,train,test,architecture,inteprolate,applyWindTransformation,temperatureAvgError,temperatureAvgStd,windGoodPredictions\n')
+    for architecture in architectures:
+        CreateTestinScenario("Default test", train1, test1, architecture, 0, 0)
+        CreateTestinScenario("Default test", train2, test2, architecture, 0, 0)
 
-    CreateTestinScenario("Default test", train1, test1, architecture, 1, 1)
-    CreateTestinScenario("Default test", train2, test2, architecture, 1, 1)
+        CreateTestinScenario("Default test", train1, test1, architecture, 1, 0)
+        CreateTestinScenario("Default test", train2, test2, architecture, 1, 0)
+
+        CreateTestinScenario("Default test", train1, test1, architecture, 0, 1)
+        CreateTestinScenario("Default test", train2, test2, architecture, 0, 1)
+
+        CreateTestinScenario("Default test", train1, test1, architecture, 1, 1)
+        CreateTestinScenario("Default test", train2, test2, architecture, 1, 1)
+elif testing_scenario == 1:
+    architecture = (5, 10)
+    CreateTestinScenario("Wind test", train1, test1, architecture, 1, 0)
+    for city in cities:
+        CreateTestinScenario("City test", train1, city, architecture, 1, 0)
+    #CreateTestinScenario("Default test", train1, test1, architecture, 0, 0)
