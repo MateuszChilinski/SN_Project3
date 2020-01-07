@@ -7,7 +7,7 @@ import numpy as np
 import os
 import math
 import time 
-testing_scenario = 1
+testing_scenario = 2
 names = ['Local time', 'Temperature', 'Pressure (station)', 'Pressure (sea level)', 'Humidity', 'Wind direction',
     'Wind m/s', 'Cloudiness', 'Horizontal Visibility',  'Dewpoint temperature', 'Latitude']
 eps = 0.01
@@ -237,11 +237,12 @@ test1 = "data/test_1"
 train2 = "data/train_2"
 test2 = "data/test_2"
 
-cities = ['Bueons Aires', 'Colombo', 'Lima', 'Male', 'Miami', 'Port Moresby', 'Port-of-Spain']
+cities = ['data/Buenos-Aires', 'data/Colombo', 'data/Lima', 'data/Male', 'data/Miami', 'data/Port-Moresby', 'data/Port-of-Spain']
+
+with open(timestr + '.csv', "a+") as myfile:
+    myfile.write('name,train,test,architecture,inteprolate,applyWindTransformation,temperatureAvgError,temperatureAvgStd,windGoodPredictions\n')
 
 if testing_scenario == 0:
-    with open(timestr + '.csv', "a+") as myfile:
-        myfile.write('name,train,test,architecture,inteprolate,applyWindTransformation,temperatureAvgError,temperatureAvgStd,windGoodPredictions\n')
     for architecture in architectures:
         CreateTestinScenario("Default test", train1, test1, architecture, 0, 0)
         CreateTestinScenario("Default test", train2, test2, architecture, 0, 0)
@@ -254,10 +255,11 @@ if testing_scenario == 0:
 
         CreateTestinScenario("Default test", train1, test1, architecture, 1, 1)
         CreateTestinScenario("Default test", train2, test2, architecture, 1, 1)
-elif testing_scenario == 1:
+elif testing_scenario >= 1:
     architecture = (5, 10)
-    CreateTestinScenario("Wind test", train1, test1, (30, 15), 1, 1)
-    testing_scenario = 2
+    if testing_scenario == 1:
+        CreateTestinScenario("Wind test", train1, test1, (30, 15), 1, 1)
+        testing_scenario = 2
     for city in cities:
         CreateTestinScenario("City test", train1, city, architecture, 1, 0)
     #CreateTestinScenario("Default test", train1, test1, architecture, 0, 0)
