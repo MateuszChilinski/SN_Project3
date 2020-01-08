@@ -186,6 +186,8 @@ def CreateSet(csv, interpolate=0, applyWindTransformation=0):
 
 def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWindTransformation=0):
     [X_train, Y_train] = CreateSet(train, interpolate, applyWindTransformation)
+    if(X_train.shape[0] == 0):
+        return
     n2 = X_train.columns.values
     n2_Y = Y_train.columns.values
     scaler = StandardScaler()
