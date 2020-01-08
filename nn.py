@@ -156,13 +156,12 @@ def CreateSet(csv, interpolate=0, applyWindTransformation=0):
         longitude = locations.TransformToLongitude(city)
         for index, row in dates.iterrows():
             curr_date = row['Local time']
-            mask = (data['Local time'] > str(curr_date)) & (data['Local time'] < str(curr_date+datetime.timedelta(days=5, seconds=1))) & (abs(data['Latitude']-latitude) < eps) & (abs(data['Longitude']-longitude) < eps)
-            maskY = (data['Local time'] > str(curr_date+datetime.timedelta(days=6, seconds=-1))) & (data['Local time'] < str(curr_date+datetime.timedelta(days=7, seconds=1))) & (abs(data['Latitude']-latitude) < eps) & (abs(data['Longitude']-longitude) < eps)
+            mask = (data['Local time'] >= str(curr_date)) & (data['Local time'] < str(curr_date+datetime.timedelta(days=5))) & (abs(data['Latitude']-latitude) < eps) & (abs(data['Longitude']-longitude) < eps)
+            maskY = (data['Local time'] >= str(curr_date+datetime.timedelta(days=6))) & (data['Local time'] < str(curr_date+datetime.timedelta(days=7))) & (abs(data['Latitude']-latitude) < eps) & (abs(data['Longitude']-longitude) < eps)
             onerow = data.loc[mask].copy()
             onerowY = data.loc[maskY].copy()
             if(onerow.shape[0] != 40 or onerowY.shape[0] != 8): # there is not enough data
                 continue
-            print(1)
             onerowY = onerowY[['Temperature', 'Wind m/s']]
             onerow['Local time'] = data['Local time'].apply(TransformDateFull)
             onerow = onerow.astype('float64')
