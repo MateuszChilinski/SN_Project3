@@ -10,7 +10,7 @@ import time
 testing_scenario = 2
 names = ['Local time', 'Temperature', 'Pressure (station)', 'Pressure (sea level)', 'Humidity', 'Wind direction',
     'Wind m/s', 'Cloudiness', 'Horizontal Visibility',  'Dewpoint temperature', 'Latitude']
-eps = 0.01
+eps = 0.1
 timestr = time.strftime("%Y%m%d-%H%M%S")
 
 def ParseCloudiness(x):
@@ -156,14 +156,14 @@ def CreateSet(csv, interpolate=0, applyWindTransformation=0):
         longitude = locations.TransformToLongitude(city)
         for index, row in dates.iterrows():
             curr_date = row['Local time']
-            mask = (data['Local time'] > str(curr_date)) & (data['Local time'] < str(curr_date+datetime.timedelta(days=5))) & (abs(data['Latitude']-latitude) < eps) & (abs(data['Longitude']-longitude) < eps)
-            maskY = (data['Local time'] > str(curr_date+datetime.timedelta(days=6))) & (data['Local time'] < str(curr_date+datetime.timedelta(days=7))) & (abs(data['Latitude']-latitude) < eps) & (abs(data['Longitude']-longitude) < eps)
+            mask = (data['Local time'] > str(curr_date)) & (data['Local time'] < str(curr_date+datetime.timedelta(days=5, seconds=1))) & (abs(data['Latitude']-latitude) < eps) & (abs(data['Longitude']-longitude) < eps)
+            maskY = (data['Local time'] > str(curr_date+datetime.timedelta(days=6, seconds=-1))) & (data['Local time'] < str(curr_date+datetime.timedelta(days=7, seconds=1))) & (abs(data['Latitude']-latitude) < eps) & (abs(data['Longitude']-longitude) < eps)
             onerow = data.loc[mask].copy()
             onerowY = data.loc[maskY].copy()
             if(onerow.shape[0] != 40 or onerowY.shape[0] != 8): # there is not enough data
                 continue
+            print(1)
             onerowY = onerowY[['Temperature', 'Wind m/s']]
-
             onerow['Local time'] = data['Local time'].apply(TransformDateFull)
             onerow = onerow.astype('float64')
             onerowY = onerowY.astype('float64')
@@ -224,7 +224,7 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
     print("Saving...", flush=True)
     with open(timestr + '.csv', "a+") as myfile:
         myfile.write(name + ',' + train + ',' + test + ',' + str(architecture).replace(',', '-') + ',' + str(interpolate) + ',' + str(applyWindTransformation) + 
-    ',' + str(np.average(errorsTemperature)) + ',' + str(np.std(errorsTemperature)) + ',' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + '\n')
+    ',' + str(np.average(errorsTemperature)) + ',' + str(np.average(np.std(errorsTemperature))) + ',' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + '\n')
     #print(name, ',', train, ',', test, ',', architecture, ',', interpolate, ',', applyWindTransformation, ',', )
     #print('Temperature\nAverage error: ' + str(np.average(errorsTemperature)) + 'Average std: ' + str(np.std(errorsTemperature).mean()))
     #print('Wind\nGood predictions: ' + str(good_predictions/(Y_test.shape[0]*Y_test.shape[1]/2)*100*8) + "%")
@@ -241,7 +241,7 @@ cities = ['data/Buenos-Aires', 'data/Colombo', 'data/Lima', 'data/Male', 'data/M
 
 with open(timestr + '.csv', "a+") as myfile:
     myfile.write('name,train,test,architecture,inteprolate,applyWindTransformation,temperatureAvgError,temperatureAvgStd,windGoodPredictions\n')
-
+print("Starting testing...")
 if testing_scenario == 0:
     for architecture in architectures:
         CreateTestinScenario("Default test", train1, test1, architecture, 0, 0)
