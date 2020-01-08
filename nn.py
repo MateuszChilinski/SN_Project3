@@ -202,6 +202,9 @@ def CreateTestinScenario(name, train, test, architecture, interpolate=0, applyWi
 
     [X_test, Y_test] = CreateSet(test, interpolate, applyWindTransformation)
 
+    if(X_test.shape[0] == 0):
+        return
+    
     X_test = scaler.transform(X_test)
     X_test = pd.DataFrame(X_test, columns=n2)
     print("Predicting...", flush=True)
